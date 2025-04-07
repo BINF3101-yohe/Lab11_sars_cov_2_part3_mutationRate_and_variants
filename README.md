@@ -90,6 +90,12 @@ exit()
 ```bash
 cp /projects/class/binf3101_001/mafft_lab11.slurm ~/lab_11
 ```
+Inspect the mafft file. Do not just run this blindly. Pay attention to the input because you will need to tweak this in the future. Make sure all of your inputs are in the lab_11 folder.
+
+When you are sure everything is in its place. Run the mafft script.
+```bash
+sbatch mafft_lab11.slurm
+```
 
 
 Create the function to calculate this:
@@ -147,6 +153,8 @@ def jukes_cantor(reference_sequence: str, distant_sequence: str) -> float:
 
 ```
 
+Your output from mafft_lab11.slurm should have created a file "coronavirus_genome_alignment.fasta". We are now going to comput the JC-distance from patient zero.
+
 ```python
 sequences = list(SeqIO.parse("coronavirus_genome_alignment.fasta", "fasta"))
 # Extract metadata from descriptions and create DataFrame
@@ -196,7 +204,8 @@ filtered_data = [(t, d) for t, d in zip(time_deltas, jc_distances) if t is not N
 time_deltas_filtered, jc_distances_filtered = zip(*filtered_data)
 ```
 
-Now plot the data
+Now we are going to plot the data such that 
+
 ```python
 # Plot JC corrected genetic distance vs. time elapsed
 plt.figure(figsize=(10, 6))
