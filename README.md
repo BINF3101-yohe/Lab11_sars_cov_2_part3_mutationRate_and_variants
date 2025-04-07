@@ -96,9 +96,30 @@ When you are sure everything is in its place. Run the mafft script.
 ```bash
 sbatch mafft_lab11.slurm
 ```
+The alignment should not take too long. We are going to calculate a mutation rate from this alignment. Remmber, by just taking the literal distances in the matrix ignores true evolutionary processes. 
+
+When comparing two DNA sequences, you can count the number of nucleotide differences (substitutions). However, this observed difference underestimates the true evolutionary divergence because some positions may have undergone multiple substitutions over time, masking earlier changesIn the phylogenetics module, we talked very briefly about model selection. To more accurately infer the mutation rate, we are going to apply one of the most simple molecular models: Jukes-Cantor.
+
+Over long evolutionary periods, some sites may experience multiple substitutions, making simple counting inaccurate. The Jukes-Cantor model accounts for these "hidden" substitutions. The Jukes-Cantor model is a mathematical tool used in molecular biology to estimate the evolutionary distance between two DNA sequences. It was developed by Charles Cantor and Thomas Jukes in 1969 and is one of the simplest models for nucleotide substitution in genetic sequences.
+
+The Jukes-Cantor model assumes:
+--All four nucleotides (A, T, C, G) are equally likely to substitute for one another.
+--Substitution rates are constant across all sites in the sequence.
+--Sites evolve independently of one another
+
+Mathematically, this can be computed:
+
+<img width="694" alt="Screenshot 2025-04-07 at 4 15 29 PM" src="https://github.com/user-attachments/assets/e9beb0b9-0821-48bf-9265-1da3b197da36" />
+
+In matrix format, it can be visualized as the following:
+
+<img width="1230" alt="Screenshot 2025-04-07 at 4 17 20 PM" src="https://github.com/user-attachments/assets/a3b4ef39-ae8d-43f4-acce-31a1a538461d" />
 
 
-Create the function to calculate this:
+## LQ 11.3
+A major limitation of J-C is that model assumes equal substitution rates. This makes it less accurate for highly divergent sequences or cases where these assumptions are violated. Give an example in which substitution rates may vary between base pairs (we talked about this in the phylogenetics mini-lab!
+
+Below is a function to calculate the Jukes-Cantor corrected genetic distance from the reference sequence to all other and plot its dependence on the time elapsed from this starting point. Copy and paste into your python terminal. Have a look and see how the math is computed.
 ```python
 import numpy as np
 
