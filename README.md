@@ -88,26 +88,18 @@ exit()
 ```
 
 ```bash
+cp /projects/class/binf3101_001/mafft_lab11.slurm ~/lab_11
 ```
-
-
-
 
 
 Create the function to calculate this:
 ```python
-# Define the Jukes-Cantor correction function
 import numpy as np
-import matplotlib.pyplot as plt
-from Bio import SeqIO
-import pandas as pd
 
-# Define the Jukes-Cantor correction function
 def jukes_cantor(reference_sequence: str, distant_sequence: str) -> float:
-    """
-    The Jukes-Cantor correction for estimating genetic distances
+    \"\"\"The Jukes-Cantor correction for estimating genetic distances
     calculated with Hamming distance.
-    
+
     Parameters
     ----------
     reference_sequence: str
@@ -116,12 +108,14 @@ def jukes_cantor(reference_sequence: str, distant_sequence: str) -> float:
     distant_sequence: str
         A string of nucleotides in a sequence after the alignment
         with a reference (e.g. AGC-AGA)
-    
+
     Returns
     -------
     float
         The Jukes-Cantor corrected genetic distance using Hamming distance.
-    """
+        For example 1.163.
+
+    \"\"\"
     # Remove positions with indels ('-') in either sequence
     filtered_ref = []
     filtered_dist = []
@@ -149,6 +143,7 @@ def jukes_cantor(reference_sequence: str, distant_sequence: str) -> float:
     jc_distance = -3/4 * np.log(1 - (4/3) * p_distance)
     
     return jc_distance
+"""
 
 ```
 
@@ -176,6 +171,8 @@ patient_zero_date = df.loc[earliest_idx, 'collection_date']
 jc_distances = []
 time_deltas = []
 
+
+##a great way to keep track of an x,y axis
 for _, row in df.iterrows():
     sequence = str(row['sequence'])
     collection_date = row['collection_date']
@@ -199,3 +196,30 @@ filtered_data = [(t, d) for t, d in zip(time_deltas, jc_distances) if t is not N
 time_deltas_filtered, jc_distances_filtered = zip(*filtered_data)
 ```
 
+Now plot the data
+```python
+# Plot JC corrected genetic distance vs. time elapsed
+plt.figure(figsize=(10, 6))
+plt.scatter(time_deltas_filtered, jc_distances_filtered, alpha=0.7, edgecolor='k')
+plt.title("Jukes-Cantor Corrected Genetic Distance vs. Time Elapsed")
+plt.xlabel("Time Elapsed (days)")
+plt.ylabel("JC Corrected Genetic Distance")
+plt.grid(True)
+
+# Save the plot to a file
+output_file = "jc_distance_vs_time_SARS-cov-2.png"  # change the file name to determine what 
+plt.savefig(output_file, dpi=300)  # Save with high resolution (300 DPI)
+print(f"Plot saved to {output_file}")
+```
+
+We've estimated the regression slope to SARS-CoV-2. Now what? Does the plot indicate a fast mutation rate? Or a slow mutation rate? Or an average mutation rate? We really can only tell with a frame of reference. In this exercise, we will look at two more viruses from recent outbreaks, the Zaire ebolavirus, and Zika virus, and determine their mutation rate. These will help us get a sufficient reference for the speed at which viruses mutate.
+
+```bash
+cp /projects/class/binf3101_001/p2-* ~/lab_11
+```
+Use ls to make sure they copied and so that you know the names of the files. You will need to edit your mafft files (or make copies and edit) to align these sequences. 
+
+To make life easier, . You will still have to prepare the files for alignment with mafft. Make sure you are inputting the alignment file!! (not the fasta file you are copying)
+```bash
+cp /projects/class/binf3101_001/genetic_distance_plot.py
+```
