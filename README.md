@@ -77,7 +77,7 @@ How does python deal with timestamps in which the day is not included in the dat
 We are going to separate our earliest sequence from the rest so we can use this in an alignment.
 ```python
 # Define file paths for output
-patient_zero_file = "patient_zero.fasta"
+patient_zero_file = "patient_zero_sarscov2.fasta"
 
 # Write patient_zero sequence to file
 with open(patient_zero_file, "w") as f_out:
