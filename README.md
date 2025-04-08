@@ -125,9 +125,30 @@ A major limitation of J-C is that model assumes equal substitution rates. This m
 
 Below is a function to calculate the Jukes-Cantor corrected genetic distance from the reference sequence to all other and plot its dependence on the time elapsed from this starting point. Copy and paste into your python terminal. Have a look and see how the math is computed.
 ```python
-def genetic_distance(reference_sequence: str, distant_sequence: str) -> float:
+import numpy as np
+import matplotlib.pyplot as plt
+from Bio import SeqIO
+import pandas as pd
+
+# Define the Jukes-Cantor correction function
+def jukes_cantor(reference_sequence: str, distant_sequence: str) -> float:
     """
-    Calculates genetic distance using Jukes-Cantor correction or falls back to uncorrected p-distance.
+    The Jukes-Cantor correction for estimating genetic distances
+    calculated with Hamming distance.
+    
+    Parameters
+    ----------
+    reference_sequence: str
+        A string of nucleotides in a sequence used as a reference
+        in an alignment with other (e.g. AGGT-GA)
+    distant_sequence: str
+        A string of nucleotides in a sequence after the alignment
+        with a reference (e.g. AGC-AGA)
+    
+    Returns
+    -------
+    float
+        The Jukes-Cantor corrected genetic distance using Hamming distance.
     """
     # Remove positions with indels ('-') in either sequence
     filtered_ref = []
@@ -138,6 +159,7 @@ def genetic_distance(reference_sequence: str, distant_sequence: str) -> float:
             filtered_ref.append(ref)
             filtered_dist.append(dist)
     
+    # Calculate the Hamming distance (proportion of differing sites)
     filtered_ref = ''.join(filtered_ref)
     filtered_dist = ''.join(filtered_dist)
     
@@ -148,14 +170,13 @@ def genetic_distance(reference_sequence: str, distant_sequence: str) -> float:
     differences = sum(1 for a, b in zip(filtered_ref, filtered_dist) if a != b)
     p_distance = differences / length  # Proportion of differing sites
     
-    # Apply Jukes-Cantor correction if valid
-    if p_distance < 3/4:
-        jc_distance = -3/4 * np.log(1 - (4/3) * p_distance)
-        return jc_distance
-    else:
-        # Fall back to uncorrected p-distance
-        return p_distance
-
+    # Apply Jukes-Cantor correction
+    if p_distance >= 3/4:
+        raise ValueError("p-distance is too high for Jukes-Cantor correction to be valid.")
+    
+    jc_distance = -3/4 * np.log(1 - (4/3) * p_distance)
+    
+    return jc_distance
 ```
 
 Your output from mafft_lab11.slurm should have created a file "coronavirus_genome_alignment.fasta". We are now going to comput the JC-distance from patient zero.
@@ -225,15 +246,52 @@ output_file = "jc_distance_vs_time_SARS-cov-2.png"  # change the file name to de
 plt.savefig(output_file, dpi=300)  # Save with high resolution (300 DPI)
 print(f"Plot saved to {output_file}")
 ```
+Using Cyberduck or filezilla (or your favorite file transfer), have a look at the beautiful plot you just made.
+
+## LQ 11.4
+The genetic distance of SARS-CoV-2 variants (increases/deacreases) as days pass. Just eyeballing, there is a (positive/negative/neutral) relationship with time and genetic distance. The slope that is fit amongst these points represents the (phylogenetic/mutation/alignment) rate for SARS-CoV-2.
+
 
 We've estimated the regression slope to SARS-CoV-2. Now what? Does the plot indicate a fast mutation rate? Or a slow mutation rate? Or an average mutation rate? We really can only tell with a frame of reference. In this exercise, we will look at two more viruses from recent outbreaks, the Zaire ebolavirus, and Zika virus, and determine their mutation rate. These will help us get a sufficient reference for the speed at which viruses mutate.
+
+Why Zika and ebola? SARS-CoV-2 is in a unique position where it is a worldwide phenomenon and warranted a global response in the past. As such, SARS-CoV-2 is most likely the most well-documented and tracked virus of all time. Even five years ago, sequencing on this scale would have been impossible. This creates a problem when we want to compare the mutation rate with other viruses. We need reference viruses that have gone through a similar lifecycle to SARS-CoV-2 and need to be recent enough such that sufficient sequencing data is available to estimate the slopes correctly. Unfortunately for us (but thankfully for humanity), only a handful of viruses fit this description (https://en.wikipedia.org/wiki/List_of_epidemics). Additionally, some developing countries still need the technological or economic capability to carry out this kind of sequencing on a large scale, making reliable data challenging to come by. We have chosen the Ebola virus and Zika virus, as their sequencing data is more or less reliable and plentiful enough.
 
 ```bash
 cp /projects/class/binf3101_001/p2-* ~/lab_11
 ```
 Use ls to make sure they copied and so that you know the names of the files. You will need to edit your mafft files (or make copies and edit) to align these sequences. 
 
-To make life easier, . You will still have to prepare the files for alignment with mafft. Make sure you are inputting the alignment file!! (not the fasta file you are copying)
+To make life easier, we are going to . You will still have to prepare the files for alignment with mafft. Make sure you are inputting the alignment file!! (not the fasta file you are copying)
 ```bash
-cp /projects/class/binf3101_001/genetic_distance_plot.py
+cp /projects/class/binf3101_001/genetic_distance_plot.py ~/lab_11
 ```
+
+This python script is exaclty like the Jukes-Cantor function you ran above, except it includes the plotting fucntion within AND it outputs the slope for you. Let's see how it is run with our SARS-CoV-2 data.
+You can now run the remaining scripts in bash.
+
+```bash
+python genetic_distance_plot.py coronavirus_genome_alignment.fasta --plot_label SARS_CoV2_Evolution
+```
+
+## LQ 11.5
+Paste the regression coefficients for SARS-CoV-2.
+
+Follow the following steps to answer the remaining lab questions.
+
+1) Edit the mafft files and submit the slurms for zika and ebola.
+
+2) Run the genetic_distance_plot.py for ebola and Zika
+
+3) Upload your plots for Ebola and Zika. Analyze them in comparison to the plot from SARS-CoV-2
+
+
+## LQ 11.6a
+The initial outbreaks of Zika and Ebola that we are analyzing occurred in the same year.
+
+## LQ 11.6b
+Based on the calculated mutaiton rates, rank the three virsues in terms of slowest to fastest mutation rate.
+
+## LQ 11.6c
+Paste your plots for J-C distance v. time for Zika and Ebola
+
+BONUS (10 points!) Plot the points and slopes of the three viruses on the same plot; color coded by virus. You can use chatGPT or your AI...or if you are THAT awesome, you can code it yourself. Paste your plot AND the code you used to plot this.
