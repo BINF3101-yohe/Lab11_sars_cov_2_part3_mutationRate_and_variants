@@ -125,28 +125,10 @@ A major limitation of J-C is that model assumes equal substitution rates. This m
 
 Below is a function to calculate the Jukes-Cantor corrected genetic distance from the reference sequence to all other and plot its dependence on the time elapsed from this starting point. Copy and paste into your python terminal. Have a look and see how the math is computed.
 ```python
-import numpy as np
-
-def jukes_cantor(reference_sequence: str, distant_sequence: str) -> float:
-    \"\"\"The Jukes-Cantor correction for estimating genetic distances
-    calculated with Hamming distance.
-
-    Parameters
-    ----------
-    reference_sequence: str
-        A string of nucleotides in a sequence used as a reference
-        in an alignment with other (e.g. AGGT-GA)
-    distant_sequence: str
-        A string of nucleotides in a sequence after the alignment
-        with a reference (e.g. AGC-AGA)
-
-    Returns
-    -------
-    float
-        The Jukes-Cantor corrected genetic distance using Hamming distance.
-        For example 1.163.
-
-    \"\"\"
+def genetic_distance(reference_sequence: str, distant_sequence: str) -> float:
+    """
+    Calculates genetic distance using Jukes-Cantor correction or falls back to uncorrected p-distance.
+    """
     # Remove positions with indels ('-') in either sequence
     filtered_ref = []
     filtered_dist = []
@@ -156,7 +138,6 @@ def jukes_cantor(reference_sequence: str, distant_sequence: str) -> float:
             filtered_ref.append(ref)
             filtered_dist.append(dist)
     
-    # Calculate the Hamming distance (proportion of differing sites)
     filtered_ref = ''.join(filtered_ref)
     filtered_dist = ''.join(filtered_dist)
     
@@ -167,13 +148,14 @@ def jukes_cantor(reference_sequence: str, distant_sequence: str) -> float:
     differences = sum(1 for a, b in zip(filtered_ref, filtered_dist) if a != b)
     p_distance = differences / length  # Proportion of differing sites
     
-    # Apply Jukes-Cantor correction
-    if p_distance >= 3/4:
-        raise ValueError("p-distance is too high for Jukes-Cantor correction to be valid.")
-    
-    jc_distance = -3/4 * np.log(1 - (4/3) * p_distance)
-    
-    return jc_distance
+    # Apply Jukes-Cantor correction if valid
+    if p_distance < 3/4:
+        jc_distance = -3/4 * np.log(1 - (4/3) * p_distance)
+        return jc_distance
+    else:
+        # Fall back to uncorrected p-distance
+        return p_distance
+
 ```
 
 Your output from mafft_lab11.slurm should have created a file "coronavirus_genome_alignment.fasta". We are now going to comput the JC-distance from patient zero.
