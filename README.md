@@ -25,9 +25,13 @@ There are ______ variants in our data set. There are _____ from China and _____ 
 ## LQ 11.1b
 TRUE or FALSE: All of the variants are the same length.
 
-```python
+```bash
 module load python
 python
+```
+In your python terminal, let's get ourselves sorted...
+
+```python
 import numpy as np          
 import pandas as pd         # for saving classification in P4
 from Bio import SeqIO       # for reading fasta files
@@ -170,8 +174,6 @@ def jukes_cantor(reference_sequence: str, distant_sequence: str) -> float:
     jc_distance = -3/4 * np.log(1 - (4/3) * p_distance)
     
     return jc_distance
-"""
-
 ```
 
 Your output from mafft_lab11.slurm should have created a file "coronavirus_genome_alignment.fasta". We are now going to comput the JC-distance from patient zero.
