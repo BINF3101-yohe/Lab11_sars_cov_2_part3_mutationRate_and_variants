@@ -367,9 +367,9 @@ Exit out so we can use grep to count the nubmer of variants in each file.
 ## LQ 11.7
 How many alpha and delta variants are in our data set?
 
-Mutation rates can also vary between variants. Remember patient zero? 
+Mutation rates can also vary between variants. Remember patient zero? This will serve as our reference sequence.
+We are now going to calculate the nucleotide mismatches between each sequence and the reference sequence for the variant. The function below then computes the average mismatch ratio for each nucleotide position to generate an array of mutation frequencies ranging from 0 to 1. A value of 0 means no mutations occurred at that position in any sequence, while a value of 1 indicates that all sequences have a mutation at that position relative to the reference. Ensure that mutations are calculated separately for each variant.
 
-Calculate the nucleotide mismatches between each sequence and the reference sequence for the variant. Then, compute the average mismatch ratio for each nucleotide position to generate an array of mutation frequencies ranging from 0 to 1. A value of 0 means no mutations occurred at that position in any sequence, while a value of 1 indicates that all sequences have a mutation at that position relative to the reference. Ensure that mutations are calculated separately for each variant.
 
 ```python
 from Bio import SeqIO
@@ -423,6 +423,9 @@ print("\nDelta Mutation Frequencies:")
 print(delta_mutation_frequencies)
 
 ```
+The printing should show an abbreviated matrix.
+
+We will now the mutation occurrences across the whole genome for the Alpha and Delta variants separately on one figure (two subplots, one on top of another). We will represent the mutation occurance as a line plot =were x-axis is sequence index and y-axis is the average mutation occurance. We will show only the part of the genome above the 20000 nucleotides (focusing on the protein-coding genes) and mark locations of the SARS-CoV-2 genes (with colors and labels). We set the gene locations in the gene_locations variable. Expect a few sites with occurrence one and the rest close to zero.
 
 ```python
 import matplotlib.pyplot as plt
@@ -488,3 +491,83 @@ def plot_mutation_occurrences(alpha_freqs, delta_freqs, gene_locations, output_f
 output_file = "mutation_occurrences.png"  # Change to your desired file name and format (e.g., .pdf)
 plot_mutation_occurrences(alpha_mutation_frequencies, delta_mutation_frequencies, gene_locations, output_file)
 ```
+
+Have a look at that plot! Wow!
+
+## LQ11.8a
+Paste your plot with the mutation occurrences in each variant.
+
+We say a mutation is vital if its occurrence is higher than 0.5. Find all vital mutations in the spike gene ("S") and compare results between variants. 
+
+## LQ11.8b
+Inspect the number of vital mutations.
+
+
+## LQ11.8c
+There is one vital mutation that occurs in a protein-coding gene of the delta variants that does not occur in the alpha variants. What protein does this gene encode for and why is it important to SARS-CoV-2 function (hint: here is a good reference: https://www.nature.com/articles/s41467-022-32019-3).
+
+
+There are a few sites where both variants mutated in the S-protein, but only one where the same mutation occurred.
+
+To interpret the output, we report mutations from a reference like the following:
+Mutation "G123A" means where G on position 123 in the reference mutates into an A.
+
+Remember we are comparing to the reference!!
+
+```python
+# Extract S gene range
+s_start, s_end = gene_locations['S']
+
+# Function to find mutations in both variants
+def find_mutations_in_both(alpha_fasta, delta_fasta, reference_sequence):
+    mutations_in_both_variants = []
+    same_mutation = []
+    # Read sequences from FASTA files
+    alpha_sequences = [str(record.seq).upper() for record in SeqIO.parse(alpha_fasta, "fasta")]
+    delta_sequences = [str(record.seq).upper() for record in SeqIO.parse(delta_fasta, "fasta")]
+    # Iterate over the S gene range
+    for i in range(s_start - 1, s_end):  # Adjusting for 0-based indexing
+        alpha_mutated_nucleotides = set(seq[i] for seq in alpha_sequences if seq[i] != reference_sequence[i])
+        delta_mutated_nucleotides = set(seq[i] for seq in delta_sequences if seq[i] != reference_sequence[i])
+        # Check if mutations occurred at this site in both variants
+        if alpha_mutated_nucleotides and delta_mutated_nucleotides:
+            mutations_in_both_variants.append(i + 1)  # Store the site index (convert back to 1-based indexing)
+            # Check if the mutation is the same in both variants
+            common_mutation = alpha_mutated_nucleotides.intersection(delta_mutated_nucleotides)
+            if common_mutation:
+                for mutation in common_mutation:
+                    mutation_string = f"{reference_sequence[i]}{i + 1}{mutation}"
+                    same_mutation.append(mutation_string)
+    return mutations_in_both_variants, same_mutation
+
+# Call the function with mutation frequencies and reference sequence
+mutations_in_both_variants, same_mutation = find_mutations_in_both(
+    alpha_fasta, delta_fasta, reference
+)
+
+# Print results
+print("Mutations in Both Variants (Indices):", mutations_in_both_variants)
+print("Same Mutations (Reference Nucleotide, Site, Variant Nucleotide):", same_mutation)
+```
+## LQ 11.9a
+How many mutations occur in both variants at the same site?
+
+## LQ 11.9b
+How many of these are the same mutation?
+
+## LQ 11.9c
+ What are the two types of mutations you observe? 
+
+ ## LQ 11.9d
+Look at the values of the sites where the shared mutations occur. There are actually really only "two" shared mutations. What do I mean by this?
+
+## LQ 11.9e
+TRUE or FALSE: The indel mutation disrupts the protein-coding reading frame rendering the spike gene nonfunctional.
+
+## LQ 11.9f
+TRUE or FALSE: Shared mutations can evolve indepdently. 
+
+## LQ 11.10
+Inspect the plot you made and think about the resulting shared mutations. Did the Delta variant evolve from the Alpha variant? Explain your reasoning based on the common mutations.
+
+
