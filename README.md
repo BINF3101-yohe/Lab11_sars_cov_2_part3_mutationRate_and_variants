@@ -295,3 +295,196 @@ Based on the calculated mutaiton rates, rank the three virsues in terms of slowe
 Paste your plots for J-C distance v. time for Zika and Ebola
 
 BONUS (10 points!) Plot the points and slopes of the three viruses on the same plot; color coded by virus. You can use chatGPT or your AI...or if you are THAT awesome, you can code it yourself. Paste your plot AND the code you used to plot this.
+
+# Part 2: Variant-specific mutations and Identifying Variants
+
+As the virus mutates, it inevitably evolves and proliferates around the world. Every so often, some mutations may prove especially beneficial to the spread of the virus, and this version of the virus spreads faster than other versions. When a version of a virus becomes especially prevalent inside a population, we call this a virus variant. Variants are nothing more than a naming scheme for viruses that have specific mutations. For instance, in Slovenia during 2022, we were dealing with the Omicron variant. Think of this as observing natural selection in real time. Some viruses have mutations that enable them to spread more easily throughout our population, which inevitably leads to the demise of other virus variants, which are not as good at proliferation. The result is survival of the fittest at the viral level, where, unfortunately, the fittest viruses seem to cause the most damage to us humans.
+
+How do we identify variants? A variant is determined by several so-called defining mutations. Mutations can either be synonymous or nonsynonymous. Synonymous mutations are changes in nucleotide bases that result in the same encoded amino acid and are thus less important. Nonsynonymous mutations are nucleotide mutations that alter the amino acid sequence of a protein.
+
+To determine mutations, we first have to select a reference genome, which we will say has no mutations. In most cases, this is the first known occurrence of the virus, but in our case, the reference NCBI genome from Wuhan in 2019 (NC_045512.2). Then, we align each viral genome of interest to this reference genome. All the differences between the reference genome and the genome of interest are said to be mutations.
+
+To get a sense of the distribution of mutations across the genome in a variant, we will observe the most common mutations in Alpha (20I (Alpha, V1)) and Delta (21A (Delta)) variants. We will then try to answer whether the Delta variant emerged from the Alpha variant or evolved independently from a different strain of the virus.
+
+```bash
+cd lab_11
+module load python
+```
+
+```python
+from Bio import SeqIO
+
+alpha_variants = [
+    'EPI_ISL_2789189', 'EPI_ISL_2789042', 'EPI_ISL_1491060', 'EPI_ISL_1402029', 'EPI_ISL_6950370',
+    'EPI_ISL_1625411', 'EPI_ISL_1335421', 'EPI_ISL_2644151', 'EPI_ISL_2982899', 'EPI_ISL_2644156',
+    'EPI_ISL_2788965', 'EPI_ISL_2789059', 'EPI_ISL_2532608', 'EPI_ISL_2644516', 'EPI_ISL_2886579',
+    'EPI_ISL_3316487', 'EPI_ISL_2886574', 'EPI_ISL_2532626', 'EPI_ISL_2886496', 'EPI_ISL_2492172',
+    'EPI_ISL_2644108', 'EPI_ISL_1402024', 'EPI_ISL_2492224', 'EPI_ISL_2491984', 'EPI_ISL_2789018',
+    'EPI_ISL_2886831', 'EPI_ISL_1491132', 'EPI_ISL_2492034', 'EPI_ISL_1266392', 'EPI_ISL_2983056'
+]
+
+delta_variants = [
+    'EPI_ISL_3039380', 'EPI_ISL_4271386', 'EPI_ISL_5213082', 'EPI_ISL_3316705', 'EPI_ISL_3316997',
+    'EPI_ISL_4251175', 'EPI_ISL_3471254', 'EPI_ISL_4271571', 'EPI_ISL_4270964', 'EPI_ISL_3317189',
+    'EPI_ISL_3829145', 'EPI_ISL_3317102', 'EPI_ISL_4923915', 'EPI_ISL_3829384', 'EPI_ISL_4923898',
+    'EPI_ISL_4270689', 'EPI_ISL_4270627', 'EPI_ISL_3828666', 'EPI_ISL_4253193', 'EPI_ISL_3828993',
+    'EPI_ISL_3039412', 'EPI_ISL_4923029', 'EPI_ISL_4251446', 'EPI_ISL_4271300', 'EPI_ISL_4271597',
+    'EPI_ISL_4271322', 'EPI_ISL_4922967', 'EPI_ISL_4251202', 'EPI_ISL_4251164', 'EPI_ISL_4270961',
+    'EPI_ISL_4270530', 'EPI_ISL_4270924', 'EPI_ISL_3829530', 'EPI_ISL_3828321', 'EPI_ISL_4271408',
+    'EPI_ISL_4271598', 'EPI_ISL_4924026', 'EPI_ISL_3316743'
+]
+
+reference_variant = [
+    'NC_045512.2'
+]
+
+#Define input and output files
+input_fasta="p1-sars-cov-2-variants.fasta"
+alpha_output = "alpha_variants.fasta"
+delta_output = "delta_variants.fasta"
+reference_output="reference_variant.fasta"
+
+# Function to extract sequences based on variant list
+def extract_variants(input_file, output_file, variant_list):
+    with open(output_file, "w") as outfile:
+        for record in SeqIO.parse(input_file, "fasta"):
+            if any(variant in record.description for variant in variant_list):
+                SeqIO.write(record, outfile, "fasta")
+
+# Usage# Extract Alpha variants
+extract_variants(input_fasta, alpha_output, alpha_variants)
+
+# Extract Delta variants
+extract_variants(input_fasta, delta_output, delta_variants)
+
+# Extract the reference patient zero
+extract_variants(input_fasta, reference_output, reference_variant)
+```
+
+Exit out so we can use grep to count the nubmer of variants in each file.
+
+
+## LQ 11.7
+How many alpha and delta variants are in our data set?
+
+Mutation rates can also vary between variants. Remember patient zero? 
+
+Calculate the nucleotide mismatches between each sequence and the reference sequence for the variant. Then, compute the average mismatch ratio for each nucleotide position to generate an array of mutation frequencies ranging from 0 to 1. A value of 0 means no mutations occurred at that position in any sequence, while a value of 1 indicates that all sequences have a mutation at that position relative to the reference. Ensure that mutations are calculated separately for each variant.
+
+```python
+from Bio import SeqIO
+import numpy as np
+
+# Input FASTA files for Alpha and Delta variants
+alpha_fasta = "alpha_variants.fasta"
+delta_fasta = "delta_variants.fasta"
+
+def read_reference_sequence(reference_fasta):
+    record = next(SeqIO.parse(reference_fasta, "fasta"))  # Read the first record from the FASTA file
+    return str(record.seq).upper()  # Return the sequence as an uppercase string
+
+reference=read_reference_sequence("reference_variant.fasta")
+
+
+def calculate_mismatch_frequencies(fasta_file, reference_sequence):
+    sequences = []
+    
+    # Read sequences from the FASTA file
+    for record in SeqIO.parse(fasta_file, "fasta"):
+        sequences.append(str(record.seq))
+    
+    # Convert sequences to a NumPy array for easier manipulation
+    seq_array = np.array([list(seq) for seq in sequences])
+    
+    # Ensure all sequences are aligned to the same length as the reference
+    if seq_array.shape[1] != len(reference_sequence):
+        raise ValueError("Sequences in the file do not match the length of the reference sequence.")
+    
+    # Convert the reference sequence to a NumPy array
+    ref_array = np.array(list(reference_sequence))
+    
+    # Calculate mismatches (1 if mismatch, 0 if match)
+    mismatches = seq_array != ref_array
+    
+    # Compute mutation frequencies (average mismatch ratio at each position)
+    mutation_frequencies = mismatches.mean(axis=0)
+    
+    return mutation_frequencies
+
+# Calculate mutation frequencies for Alpha and Delta variants
+alpha_mutation_frequencies = calculate_mismatch_frequencies(alpha_fasta, reference)
+delta_mutation_frequencies = calculate_mismatch_frequencies(delta_fasta, reference)
+
+# Save results or print them
+print("Alpha Mutation Frequencies:")
+print(alpha_mutation_frequencies)
+
+print("\nDelta Mutation Frequencies:")
+print(delta_mutation_frequencies)
+
+```
+
+```python
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Mutation frequencies for Alpha and Delta variants (calculated earlier)
+alpha_mutation_frequencies = np.array(alpha_mutation_frequencies)
+delta_mutation_frequencies = np.array(delta_mutation_frequencies)
+
+# Gene locations
+gene_locations = {
+    'S': (21462, 25284),
+    'E': (26144, 26372),
+    'M': (26422, 27091),
+    'N': (28173, 29433)
+}
+
+# Function to plot mutation occurrences
+def plot_mutation_occurrences(alpha_freqs, delta_freqs, gene_locations, output_file):
+    # Create a figure with two subplots
+    fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+    
+    # X-axis: nucleotide positions
+    x_positions = np.arange(len(alpha_freqs))
+    
+    # Filter positions above 20,000 nucleotides
+    mask = x_positions >= 20000
+    x_filtered = x_positions[mask]
+    alpha_filtered = alpha_freqs[mask]
+    delta_filtered = delta_freqs[mask]
+    
+    # Plot Alpha variant mutation frequencies
+    axes[0].plot(x_filtered, alpha_filtered, label="Alpha Variant", color="blue")
+    axes[0].set_title("Alpha Variant Mutation Occurrences")
+    axes[0].set_ylabel("Average Mutation Occurrence")
+    
+    # Plot Delta variant mutation frequencies
+    axes[1].plot(x_filtered, delta_filtered, label="Delta Variant", color="red")
+    axes[1].set_title("Delta Variant Mutation Occurrences")
+    axes[1].set_xlabel("Nucleotide Position")
+    axes[1].set_ylabel("Average Mutation Occurrence")
+    
+    # Mark gene locations on both subplots
+    for gene_name, (start, end) in gene_locations.items():
+        for ax in axes:
+            ax.axvspan(start, end, alpha=0.3, label=f"{gene_name} Gene", color="grey")
+            ax.text((start + end) / 2, ax.get_ylim()[1] * 0.8,
+                    gene_name, color="black", ha="center", va="center", fontsize=10)
+    
+    # Add legends
+    axes[0].legend(loc="upper right")
+    axes[1].legend(loc="upper right")
+    
+    # Adjust layout and save plot to file
+    plt.tight_layout()
+    plt.savefig(output_file)  # Save the figure to a file
+    print(f"Plot saved to {output_file}")
+    
+    # Show the plot (optional)
+    plt.show()
+
+# Call the function to plot and save mutation occurrences
+output_file = "mutation_occurrences.png"  # Change to your desired file name and format (e.g., .pdf)
+plot_mutation_occurrences(alpha_mutation_frequencies, delta_mutation_frequencies, gene_locations, output_file)
+```
